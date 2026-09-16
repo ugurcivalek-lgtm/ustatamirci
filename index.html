@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="tr" class="overflow-x-hidden w-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ustatamirci - Kombi & Klima Servis ve Teklif Takip Programı</title>
+  <script>
+    window.addEventListener('error', function(e) {
+      alert("HATA: " + e.message + " (Satır: " + e.lineno + ")");
+    });
+  </script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0ea5e9">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css?v=5">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white overflow-x-hidden w-full relative">
+
+  <!-- ============================================================= -->
+  <!-- TOP HEADER / NAVBAR                                           -->
+  <!-- ============================================================= -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-4">
+        
+        <!-- Logo & Brand: ustatamirci -->
+        <div class="flex items-center gap-3 shrink-0 cursor-pointer" onclick="switchTab('services')">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 via-blue-600 to-orange-500 flex items-center justify-center text-white shadow-md font-bold shrink-0">
+            <span class="text-xl">🔧</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-black text-xl sm:text-2xl text-slate-900 tracking-tight">usta<span class="text-sky-600">tamirci</span></span>
+              <span class="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 border border-orange-200">Kombi & Klima</span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium hidden sm:block">Teknik Servis & Fiyat Teklifi Yönetimi</p>
+          </div>
+        </div>
+
+        <!-- Global Search Bar -->
+        <div class="flex-1 max-w-md hidden md:block">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input 
+              type="text" 
+              id="globalSearchInput" 
+              placeholder="Müşteri, telefon, teklif no, arıza veya ilçe ara..." 
+              class="w-full bg-slate-100/80 hover:bg-slate-100 focus:bg-white text-slate-800 text-xs rounded-xl pl-10 pr-4 py-2 border border-transparent focus:border-sky-500 focus:outline-none transition-all placeholder:text-slate-400"
+            >
+          </div>
+        </div>
+
+        <!-- Header Action Buttons: YENİ SERVİS & YENİ TEKLİF -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button 
+            onclick="openProposalModal()" 
+            class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/25 transition active:scale-95"
+            title="Yeni Fiyat Teklifi Hazırla"
+          >
+            <i data-lucide="file-plus-2" class="w-4 h-4 stroke-[2.5]"></i>
+            <span class="hidden sm:inline">+ Teklif</span>
+          </button>
+
+          <button 
+            onclick="openUnifiedServiceModal('new')" 
+            class="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-extrabold bg-sky-600 hover:bg-sky-700 text-white shadow-sm shadow-sky-600/25 transition active:scale-95"
+            title="Yeni Müşteri & Servis Kaydı Aç"
+          >
+            <i data-lucide="user-plus" class="w-4 h-4 stroke-[2.5]"></i>
+            <span class="hidden sm:inline">Servis Aç</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Search Bar -->
+      <div class="pb-3 md:hidden">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input 
+            type="text" 
+            oninput="state.searchQuery = this.value; renderServicesList(); renderProposalsList(); renderCustomersList();" 
+            placeholder="İsim, telefon, fiş veya teklif ara..." 
+            class="w-full bg-slate-100 text-xs rounded-xl pl-9 pr-3 py-2 border border-slate-200 focus:outline-none focus:border-sky-500"
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="bg-white border-t border-slate-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto no-scrollbar gap-1 py-1.5">
+        <button id="nav-services" onclick="switchTab('services')" class="nav-btn active-nav flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap bg-sky-50 text-sky-700 border-b-2 border-sky-600">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+          <span>Servis Kayıtları</span>
+          <span id="badgePendingCount" class="ml-1 px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-extrabold hidden">0</span>
+        </button>
+
+        <button id="nav-proposals" onclick="switchTab('proposals')" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition whitespace-nowrap">
+          <i data-lucide="file-text" class="w-4 h-4 text-emerald-600"></i>
+          <span>Fiyat Teklifleri</span>
+          <span id="badgeProposalCount" class="ml-1 px-1.5 py-0.2 bg-emerald-600 text-white rounded-full text-[10px] font-extrabold">0</span>
+        </button>
+
+        <button id="nav-customers" onclick="switchTab('customers')" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition whitespace-nowrap">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Müşteriler & Cihazlar</span>
+        </button>
+
+        <button id="nav-maintenance" onclick="switchTab('maintenance')" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition whitespace-nowrap">
+          <i data-lucide="bell-ring" class="w-4 h-4"></i>
+          <span>Bakım Hatırlatıcısı</span>
+          <span id="badgeMaintenanceCount" class="ml-1 px-1.5 py-0.2 bg-orange-500 text-white rounded-full text-[10px] font-extrabold hidden">0</span>
+        </button>
+
+        <button id="nav-finance" onclick="switchTab('finance')" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition whitespace-nowrap">
+          <i data-lucide="wallet" class="w-4 h-4"></i>
+          <span>Kasa & Finans</span>
+        </button>
+
+        <button id="nav-settings" onclick="switchTab('settings')" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition whitespace-nowrap">
+          <i data-lucide="settings-2" class="w-4 h-4"></i>
+          <span>Ayarlar & Yedek</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================= -->
+  <!-- MAIN CONTAINER                                                -->
+  <!-- ============================================================= -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
+
+    <!-- Top Dashboard Summary Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500">Bugünkü İşler</span>
+          <span class="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-slate-800 mt-2" id="statToday">0</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">Bugün randevulu servis</div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500">Bekleyen / Parça</span>
+          <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-amber-600 mt-2" id="statPending">0</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">Müdahale bekleyen</div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500">Tamamlanan</span>
+          <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-emerald-600 mt-2" id="statCompleted">0</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">Biten servisler</div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500">Verilen Teklifler</span>
+          <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <i data-lucide="file-check-2" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <div class="text-xl sm:text-2xl font-black text-slate-900 mt-2" id="statProposalTotal">0 ₺</div>
+        <div class="text-[11px] text-emerald-600 font-semibold mt-0.5" id="statProposalCount">0 Teklif hazırlandı</div>
+      </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- TAB 1: SERVIS KAYITLARI                                       -->
+    <!-- ============================================================= -->
+    <section id="tab-services" class="tab-content">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-2 mb-2 sm:mb-0 shrink-0">
+          <div class="relative">
+            <input type="date" id="serviceDateFilter" onchange="renderServicesList()" class="px-3 py-1.5 pl-8 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-sky-500" />
+            <i data-lucide="calendar" class="w-4 h-4 text-slate-400 absolute left-2.5 top-2"></i>
+          </div>
+          <button onclick="document.getElementById('serviceDateFilter').value = ''; renderServicesList();" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition">
+            Tüm Tarihler
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+          <button id="filter-btn-all" onclick="setFilterStatus('all')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-600 text-white shadow-xs">
+            Tüm Kayıtlar
+          </button>
+          <button id="filter-btn-pending" onclick="setFilterStatus('pending')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+            Randevu Verilenler
+          </button>
+          <button id="filter-btn-in_progress" onclick="setFilterStatus('in_progress')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+            İşlemdekiler
+          </button>
+          <button id="filter-btn-waiting_part" onclick="setFilterStatus('waiting_part')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+            Parça Bekleyenler
+          </button>
+          <button id="filter-btn-completed" onclick="setFilterStatus('completed')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+            Tamamlananlar
+          </button>
+        </div>
+
+        <div class="text-xs text-slate-500 font-medium">
+          Müşteriyi aramak veya WhatsApp'tan fiş göndermek için kartların sağındaki butonları kullanın.
+        </div>
+      </div>
+
+      <div id="servicesListContainer" class="space-y-3.5"></div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 2: FİYAT TEKLİFLERİ (YENİ!)                               -->
+    <!-- ============================================================= -->
+    <section id="tab-proposals" class="tab-content hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i> Fiyat Teklifleri Yönetimi
+          </h2>
+          <p class="text-xs text-slate-500">Kombi değişimi, klima montajı ve arıza onarım teklifleri oluşturun, yazdırın veya WhatsApp'tan paylaşın.</p>
+        </div>
+
+        <button onclick="openProposalModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-sm shadow-emerald-600/25 transition active:scale-95 self-start sm:self-auto">
+          <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
+          <span>Yeni Fiyat Teklifi Hazırla</span>
+        </button>
+      </div>
+
+      <!-- Proposals Filter Chips -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-4">
+        <button id="prop-filter-all" onclick="setProposalFilter('all')" class="prop-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-xs">
+          Tüm Teklifler
+        </button>
+        <button id="prop-filter-sent" onclick="setProposalFilter('sent')" class="prop-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+          Gönderilenler
+        </button>
+        <button id="prop-filter-accepted" onclick="setProposalFilter('accepted')" class="prop-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-emerald-700 border border-slate-200 hover:bg-emerald-50">
+          Onaylananlar (Kabul)
+        </button>
+        <button id="prop-filter-draft" onclick="setProposalFilter('draft')" class="prop-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+          Taslaklar
+        </button>
+        <button id="prop-filter-rejected" onclick="setProposalFilter('rejected')" class="prop-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-rose-600 border border-slate-200 hover:bg-rose-50">
+          Reddedilenler
+        </button>
+      </div>
+
+      <!-- Proposals List Container -->
+      <div id="proposalsListContainer" class="space-y-3.5"></div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 3: MÜŞTERİLER & CİHAZLAR                                  -->
+    <!-- ============================================================= -->
+    <section id="tab-customers" class="tab-content hidden">
+      <div class="flex items-center justify-between gap-4 mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Kayıtlı Müşteri & Cihaz Rehberi</h2>
+          <p class="text-xs text-slate-500">Müşterilerinizin adres, telefon ve kayıtlı cihazları.</p>
+        </div>
+        <button onclick="openUnifiedServiceModal('new')" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Yeni Müşteri & Servis Kaydet
+        </button>
+      </div>
+
+      <div id="customersListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 4: BAKIM HATIRLATICISI                                    -->
+    <!-- ============================================================= -->
+    <section id="tab-maintenance" class="tab-content hidden">
+      <div id="maintenanceListContainer"></div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 5: KASA & FİNANS                                          -->
+    <!-- ============================================================= -->
+    <section id="tab-finance" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200">
+          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Toplam Servis Cirosu</div>
+          <div class="text-2xl font-black text-slate-800 mt-2" id="finRevenue">0 ₺</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center justify-between pt-2 border-t border-slate-100">
+            <span>İşçilik: <strong id="finLabor">0 ₺</strong></span>
+            <span>Parça: <strong id="finParts">0 ₺</strong></span>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200">
+          <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Tahsil Edilen Tutar</div>
+          <div class="text-2xl font-black text-emerald-600 mt-2" id="finCollected">0 ₺</div>
+          <div class="text-xs text-slate-500 mt-1">Nakit, Havale ve Kredi Kartı</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200">
+          <div class="text-xs font-bold text-rose-600 uppercase tracking-wider">Açık Hesap (Alacaklar)</div>
+          <div class="text-2xl font-black text-rose-600 mt-2" id="finDebt">0 ₺</div>
+          <div class="text-xs text-slate-500 mt-1">Tahsil edilecek müşteri bakiyesi</div>
+        </div>
+      </div>
+
+      
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 6: AYARLAR & YEDEKLEME                                    -->
+    <!-- ============================================================= -->
+    <section id="tab-settings" class="tab-content hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
+          <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+            <i data-lucide="store" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-800">Servis & İşletme Bilgileri</h3>
+            <p class="text-xs text-slate-400">Yazdırılacak servis fişleri, teklif formları ve WhatsApp mesajlarında görünür.</p>
+          </div>
+        </div>
+
+        <form id="settingsForm" onsubmit="saveSettingsFromForm(event)" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Servis / İşletme Adı:</label>
+            <input type="text" id="setBusinessName" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none font-bold" required>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Yetkili / Usta Adı:</label>
+            <input type="text" id="setOwnerName" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">İletişim Telefonu (WhatsApp):</label>
+            <input type="text" id="setPhone" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none" required>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">E-posta Adresi:</label>
+            <input type="email" id="setEmail" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block font-semibold text-slate-700 mb-1">İşletme / Dükkan Adresi:</label>
+            <input type="text" id="setAddress" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Vergi Dairesi & No (Opsiyonel):</label>
+            <input type="text" id="setTaxInfo" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Fiş Altı Garanti Şartı Açıklaması:</label>
+            <input type="text" id="setServiceTerms" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none">
+          </div>
+
+          <div class="md:col-span-2 pt-2">
+            <button type="submit" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i> Ayarları Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Veri Yedekleme -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <i data-lucide="database-backup" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-800">Veri Güvenliği ve Yedekleme</h3>
+            <p class="text-xs text-slate-400">Verilerinizi tek tıkla bilgisayarınıza indirin veya geri yükleyin.</p>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-sm text-slate-800">Yedek İndir (JSON)</div>
+              <p class="text-xs text-slate-500 mt-1">Servis, teklif ve müşteri kayıtlarınızı tek dosya olarak bilgisayarınıza indirir.</p>
+            </div>
+            <button onclick="exportBackupJSON()" class="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs inline-flex items-center justify-center gap-2">
+              <i data-lucide="download" class="w-4 h-4"></i> Yedeği Bilgisayara İndir
+            </button>
+          </div>
+
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-sm text-slate-800">Yedek Geri Yükle</div>
+              <p class="text-xs text-slate-500 mt-1">Önceden aldığınız yedek dosyasını seçerek tüm verileri geri yükleyin.</p>
+            </div>
+            <label class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs inline-flex items-center justify-center gap-2 cursor-pointer">
+              <i data-lucide="upload" class="w-4 h-4"></i> Dosya Seç ve Yükle
+              <input type="file" accept=".json" onchange="importBackupJSON(event)" class="hidden">
+            </label>
+          </div>
+
+          <div class="p-4 rounded-xl border border-rose-200 bg-rose-50 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-sm text-rose-800">Verileri Temizle / Sıfırla</div>
+              <p class="text-xs text-rose-600 mt-1">Tüm verileri temizleyip ustatamirci temiz başlangıç verilerini yükler.</p>
+            </div>
+            <button onclick="resetToSampleData()" class="mt-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs inline-flex items-center justify-center gap-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Temiz Başlangıca Dön
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 1: BİRLEŞİK YENİ MÜŞTERİ & SERVİS MODALI                -->
+  <!-- ============================================================= -->
+  <div id="serviceModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 max-h-[92vh] flex flex-col">
+      
+      <div class="p-4 px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div>
+          <h3 id="serviceModalTitle" class="font-black text-slate-900 text-base flex items-center gap-2">
+            <i data-lucide="clipboard-pen" class="w-5 h-5 text-sky-600"></i> Yeni Servis Kaydı Aç
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5" id="serviceModalSubtitle">Müşteri ve randevu bilgilerini girip tek tuşla servisi oluşturun.</p>
+        </div>
+        <button onclick="closeModal('serviceModal')" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="px-6 pt-4 shrink-0 bg-white" id="customerTypeSelector">
+        <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-xl max-w-md mx-auto text-xs font-bold">
+          <button type="button" id="btnModeNew" onclick="setServiceMode('new')" class="py-2 rounded-lg text-sky-700 bg-white shadow-xs transition flex items-center justify-center gap-1.5">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Yeni Müşteri Kaydı</span>
+          </button>
+          <button type="button" id="btnModeExisting" onclick="setServiceMode('existing')" class="py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Rehberden Seç</span>
+          </button>
+        </div>
+      </div>
+
+      <form id="serviceForm" onsubmit="handleUnifiedServiceSubmit(event)" class="p-6 overflow-y-auto space-y-5 text-xs flex-1">
+        <!-- Yeni Müşteri Bölümü -->
+        <div id="sectionNewCustomer" class="space-y-3 bg-sky-50/60 p-4 rounded-2xl border border-sky-100">
+          <div class="font-extrabold text-slate-800 text-xs flex items-center justify-between pb-2 border-b border-sky-200/60">
+            <span class="flex items-center gap-1.5 text-sky-900">
+              <i data-lucide="user" class="w-4 h-4 text-sky-600"></i> Müşteri İletişim & Adres Bilgileri
+            </span>
+            <span class="text-[11px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-md">Yeni Müşteri</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Müşteri Adı Soyadı:</label>
+              <input type="text" id="newCustName" placeholder="Örn: Ahmet Yılmaz" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none font-medium bg-white" required>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Telefon Numarası:</label>
+              <input type="tel" id="newCustPhone" placeholder="Örn: 0532 555 12 34" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none font-medium bg-white" required>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">İlçe Seçin:</label>
+              <select id="newCustDistrict" onchange="onDistrictChange(this.value)" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none font-bold bg-white text-slate-800" required>
+                <option value="">-- İlçe Seçiniz --</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Mahalle Seçin:</label>
+              <select id="newCustNeighborhood" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none font-medium bg-white text-slate-800">
+                <option value="">-- Önce İlçe Seçin --</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Açık Adres & Daire / Tarif:</label>
+            <textarea id="newCustAddress" rows="2" placeholder="Örn: Çıkmaz Sok. No: 12 D: 4 (Eczane karşısı)" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-sky-500 focus:outline-none bg-white"></textarea>
+          </div>
+
+          <div class="pt-2 border-t border-sky-200/50">
+            <div class="font-bold text-slate-700 text-xs mb-2 flex items-center gap-1.5">
+              <i data-lucide="cpu" class="w-3.5 h-3.5 text-orange-500"></i> Cihaz Bilgisi (Kombi veya Klima)
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Cihaz Türü:</label>
+                <select id="newDevType" onchange="selectDeviceTypeHelper(this.value)" class="w-full border border-slate-300 rounded-xl p-2 bg-white focus:outline-none font-medium">
+                  <option value="kombi">Kombi</option>
+                  <option value="klima">Klima</option>
+                  <option value="sofben">Şofben</option>
+                  <option value="termosifon">Termosifon</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Marka:</label>
+                <input type="text" id="newDevBrand" list="popularBrandsList" placeholder="Örn: DemirDöküm, Daikin, Bosch" class="w-full border border-slate-300 rounded-xl p-2 bg-white focus:border-sky-500 focus:outline-none font-semibold" required>
+                <datalist id="popularBrandsList">
+                  <option value="DemirDöküm">
+                  <option value="Vaillant">
+                  <option value="E.C.A.">
+                  <option value="Baymak">
+                  <option value="Bosch">
+                  <option value="Buderus">
+                  <option value="Daikin">
+                  <option value="Mitsubishi Electric">
+                  <option value="Arçelik">
+                  <option value="Viessmann">
+                  <option value="Protherm">
+                </datalist>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Model (Opsiyonel):</label>
+                <input type="text" id="newDevModel" placeholder="Örn: Nitromix P 24 / Sensira" class="w-full border border-slate-300 rounded-xl p-2 bg-white focus:outline-none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rehberden Müşteri Seçimi -->
+        <div id="sectionExistingCustomer" class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 hidden">
+          <div class="font-extrabold text-slate-800 text-xs flex items-center justify-between pb-2 border-b border-slate-200">
+            <span class="flex items-center gap-1.5 text-slate-800">
+              <i data-lucide="users" class="w-4 h-4 text-sky-600"></i> Kayıtlı Müşteri & Cihaz Seçin
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Müşteri Seçin:</label>
+              <select id="srvCustomerId" onchange="onCustomerChangeInServiceModal()" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white focus:outline-none focus:border-sky-500 font-bold">
+                <!-- JS Populates -->
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">İşlem Yapılacak Cihaz:</label>
+              <select id="srvDeviceId" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white focus:outline-none focus:border-sky-500 font-medium">
+                <!-- JS Populates -->
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Randevu & Servis Detayları -->
+        <div class="space-y-3 p-4 bg-orange-50/40 rounded-2xl border border-orange-100">
+          <div class="font-extrabold text-slate-800 text-xs flex items-center justify-between pb-2 border-b border-orange-200/60">
+            <span class="flex items-center gap-1.5 text-orange-950">
+              <i data-lucide="calendar" class="w-4 h-4 text-orange-600"></i> Randevu & Servis Bilgisi
+            </span>
+            <span class="text-[11px] font-mono font-bold text-slate-400" id="srvSlipNoBadge">SRV-001</span>
+            <input type="hidden" id="srvSlipNo">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-800 mb-1">Servis / Randevu Tarihi:</label>
+              <input type="date" id="srvDate" class="w-full border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-sky-500 font-bold text-slate-800 bg-white" required>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-800 mb-1">Randevu Saati:</label>
+              <input type="time" id="srvTime" value="14:00" class="w-full border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-sky-500 font-bold text-slate-800 bg-white">
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-800 mb-1">Servis Durumu:</label>
+              <select id="srvStatus" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white focus:outline-none focus:border-sky-500 font-bold text-slate-800">
+                <option value="pending">Randevu Verildi</option>
+                <option value="in_progress">İşlemde / Sahada</option>
+                <option value="waiting_part">Parça Bekliyor</option>
+                <option value="completed">Tamamlandı</option>
+                <option value="cancelled">İptal Edildi</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-800 mb-1">Arıza Şikayeti / Müşteri Talebi:</label>
+            <textarea id="srvFault" rows="2" placeholder="Örn: Ateşleme yapmıyor / F4 arıza kodu / Sıcak su dalgalanıyor / Yıllık kombi kış bakımı / Soğutmuyor" class="w-full border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-sky-500 bg-white" required></textarea>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Yapılan İşlem / Müdahale (Opsiyonel):</label>
+            <textarea id="srvAction" rows="1" placeholder="Örn: Filtre temizlendi, gaz basıldı (servis sonrasında da güncelleyebilirsiniz)" class="w-full border border-slate-300 rounded-xl p-2 focus:outline-none focus:border-sky-500 bg-white"></textarea>
+          </div>
+        </div>
+
+        <!-- Ücret ve Parça Akordiyonu -->
+        <details class="border border-slate-200 rounded-2xl bg-white p-3.5 group">
+          <summary class="font-bold text-slate-700 cursor-pointer flex items-center justify-between text-xs">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="banknote" class="w-4 h-4 text-emerald-600"></i> Ücret, Parça ve Tahsilat Bilgileri (İsteğe Bağlı)
+            </span>
+            <span class="text-sky-600 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+
+          <div class="mt-4 space-y-4 pt-3 border-t border-slate-100">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="flex items-center justify-between mb-2">
+                <label class="font-bold text-slate-700">Değişen Yedek Parçalar</label>
+                <button type="button" onclick="addPartRow()" class="px-2 py-1 bg-white hover:bg-sky-50 text-sky-700 border border-slate-300 rounded-lg font-bold flex items-center gap-1 text-[11px]">
+                  <i data-lucide="plus" class="w-3 h-3"></i> Parça Ekle
+                </button>
+              </div>
+              <div id="partsContainer" class="space-y-2"></div>
+              <div class="text-right text-xs text-slate-500 mt-2 font-semibold">
+                Parça Toplamı: <span id="srvPartsTotalDisplay" class="text-slate-800 font-bold">0 ₺</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">İşçilik Ücreti:</label>
+                <input type="number" min="0" step="50" id="srvLabor" value="0" oninput="calcServiceTotals()" class="w-full border border-slate-300 rounded-xl p-2 font-semibold focus:outline-none focus:border-sky-500 bg-white">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Toplam Tutar:</label>
+                <input type="hidden" id="srvTotalAmount" value="0">
+                <div id="srvTotalDisplay" class="text-base font-black text-slate-900 pt-1.5">0 ₺</div>
+              </div>
+
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Ödeme Yöntemi:</label>
+                <select id="srvPaymentMethod" class="w-full border border-slate-300 rounded-xl p-2 bg-white focus:outline-none font-medium">
+                  <option value="Nakit">Nakit</option>
+                  <option value="Kredi Kartı">Kredi Kartı</option>
+                  <option value="Havale/EFT">Havale / EFT / FAST</option>
+                  <option value="Açık Hesap (Veresiye)">Açık Hesap (Borç)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button type="button" onclick="closeModal('serviceModal')" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+            İptal
+          </button>
+          <button type="submit" class="px-7 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-extrabold shadow-md shadow-sky-600/25 transition active:scale-95 inline-flex items-center gap-2 text-xs">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span id="btnSubmitServiceText">Servis Randevusunu Oluştur</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 2: YENİ FİYAT TEKLİFİ OLUŞTUR / DÜZENLE (YENİ!)        -->
+  <!-- ============================================================= -->
+  <div id="proposalModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 max-h-[92vh] flex flex-col">
+      
+      <!-- Header -->
+      <div class="p-4 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h3 id="proposalModalTitle" class="font-extrabold text-base flex items-center gap-2 text-white">
+            <i data-lucide="file-plus-2" class="w-5 h-5 text-emerald-400"></i> Yeni Fiyat Teklifi Hazırla
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Ürün/hizmet kalemlerini girin, tek tıkla yazdırılabilir A4 veya WhatsApp teklifi oluşturun.</p>
+        </div>
+        <button onclick="closeModal('proposalModal')" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form id="proposalForm" onsubmit="saveProposalForm(event)" class="p-6 overflow-y-auto space-y-4 text-xs flex-1">
+        
+        <!-- Üst Satır: Teklif No, Tarih, Geçerlilik, Durum -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Teklif No:</label>
+            <input type="text" id="propNo" class="w-full border border-slate-300 rounded-xl p-2 font-mono font-bold text-slate-800 bg-white" required>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Teklif Tarihi:</label>
+            <input type="date" id="propDate" class="w-full border border-slate-300 rounded-xl p-2 font-bold text-slate-800 bg-white" required>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Geçerlilik Süresi:</label>
+            <select id="propValidDays" class="w-full border border-slate-300 rounded-xl p-2 bg-white font-medium">
+              <option value="7">7 Gün Geçerli</option>
+              <option value="15" selected>15 Gün Geçerli</option>
+              <option value="30">30 Gün Geçerli</option>
+              <option value="60">60 Gün Geçerli</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Teklif Durumu:</label>
+            <select id="propStatus" class="w-full border border-slate-300 rounded-xl p-2 bg-white font-bold text-slate-800">
+              <option value="draft">Taslak (Hazırlanıyor)</option>
+              <option value="sent" selected>Gönderildi</option>
+              <option value="accepted">Kabul Edildi (Onaylandı)</option>
+              <option value="rejected">Reddedildi / İptal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Müşteri ve Teklif Başlığı -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-100">
+          <div class="space-y-2">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-semibold text-slate-700">Müşteri Adı Soyadı:</label>
+                <select id="propCustomerSelect" onchange="fillProposalCustomerFromSelect(this.value)" class="text-[11px] text-emerald-800 bg-emerald-100 rounded-lg px-2 py-0.5 font-bold border border-emerald-200">
+                  <option value="">-- Rehberden Müşteri Seç --</option>
+                  <!-- JS fills -->
+                </select>
+              </div>
+              <input type="text" id="propCustomerName" placeholder="Örn: Ahmet Yılmaz" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-bold text-slate-800" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Telefon:</label>
+                <input type="tel" id="propCustomerPhone" placeholder="0532 000 00 00" class="w-full border border-slate-300 rounded-xl p-2 bg-white font-semibold" required>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">İl / İlçe:</label>
+                <input type="text" id="propCustomerDistrict" placeholder="Kadıköy / İstanbul" class="w-full border border-slate-300 rounded-xl p-2 bg-white">
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Teklif Konusu / Başlığı:</label>
+              <input type="text" id="propTitle" placeholder="Örn: DemirDöküm Nitromix Kombi Montajı & Dönüşüm Teklifi" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-bold text-slate-800" required>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Açık Adres / Montaj Yeri:</label>
+              <input type="text" id="propCustomerAddress" placeholder="Örn: Koşuyolu Mah. Çıkmaz Sok. No: 12" class="w-full border border-slate-300 rounded-xl p-2 bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- Teklif Kalemleri (Dinamik Tablo) -->
+        <div class="border border-slate-200 rounded-2xl bg-white p-4 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h4 class="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+              <i data-lucide="layers" class="w-4 h-4 text-emerald-600"></i> Teklif Edilen Ürün ve Hizmet Kalemleri
+            </h4>
+            <button type="button" onclick="addProposalItemRow()" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl text-xs flex items-center gap-1 border border-emerald-200 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Kalem Ekle
+            </button>
+          </div>
+
+          <div id="proposalItemsContainer" class="space-y-2">
+            <!-- Proposal dynamic rows -->
+          </div>
+
+          <!-- Hesaplama Özeti -->
+          <div class="flex justify-end pt-3 border-t border-slate-100">
+            <div class="w-72 space-y-2 text-xs">
+              <div class="flex items-center justify-between text-slate-600">
+                <span>Ara Toplam:</span>
+                <span id="propSubtotalDisplay" class="font-bold text-slate-800">0 ₺</span>
+              </div>
+
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-slate-600">İskonto / İndirim:</span>
+                <input type="number" min="0" step="100" id="propDiscount" value="0" oninput="calcProposalTotals()" class="w-28 border border-slate-300 rounded-lg p-1 text-right font-bold text-rose-600 bg-white">
+              </div>
+
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-slate-600">KDV Durumu:</span>
+                <select id="propVatType" onchange="calcProposalTotals()" class="border border-slate-300 rounded-lg p-1 text-xs bg-white font-medium">
+                  <option value="dahil">KDV Dahil</option>
+                  <option value="yok">KDV Yok (%0)</option>
+                  <option value="arti20">+%20 KDV Ekle</option>
+                </select>
+              </div>
+
+              <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-slate-900 font-black text-sm">
+                <span>GENEL TOPLAM:</span>
+                <span id="propGrandTotalDisplay" class="text-emerald-700 text-base">0 ₺</span>
+                <input type="hidden" id="propGrandTotal" value="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Teklif Şartları & Garanti Açıklaması -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Teklif Koşulları, Teslimat & Garanti Şartları:</label>
+          <textarea id="propTerms" rows="3" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white focus:outline-none focus:border-sky-500 text-slate-700 leading-relaxed"></textarea>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+          <button type="button" onclick="closeModal('proposalModal')" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+            İptal
+          </button>
+          <button type="submit" class="px-7 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold shadow-md shadow-emerald-600/25 transition active:scale-95 inline-flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Teklifi Kaydet</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 3: RESMİ A4 FİYAT TEKLİFİ FORMU (YAZDIRILABİLİR / PDF)  -->
+  <!-- ============================================================= -->
+  <div id="printProposalModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-6 print-area">
+      
+      <!-- Modal Action Bar -->
+      <div class="p-4 px-6 bg-slate-900 text-white flex items-center justify-between no-print">
+        <div class="flex items-center gap-2">
+          <i data-lucide="file-check-2" class="w-5 h-5 text-emerald-400"></i>
+          <span class="font-bold text-sm">Resmi Fiyat Teklifi Formu & PDF Önizleme</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="sendProposalWhatsApp(state.printingProposalId)" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+            <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp Paylaş
+          </button>
+          <button onclick="window.print()" class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+            <i data-lucide="printer" class="w-4 h-4"></i> Teklifi Yazdır (A4 / PDF Kaydet)
+          </button>
+          <button onclick="closeModal('printProposalModal')" class="p-1.5 text-slate-400 hover:text-white rounded-lg">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable A4 Proposal Form -->
+      <div class="p-8 sm:p-14 text-slate-800 bg-white" id="printableProposal">
+        
+        <!-- Header -->
+        <div class="flex items-start justify-between border-b-2 border-slate-900 pb-6">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight" id="printPropBusinessName">
+                ustatamirci
+              </span>
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">FİYAT TEKLİFİ</span>
+            </div>
+            <p class="text-xs text-slate-600 font-medium mt-1.5" id="printPropBusinessContact">
+              Tel: 0532 000 00 00 • Atatürk Cad. No: 45 Kadıköy / İstanbul
+            </p>
+            <p class="text-[11px] text-slate-500 mt-0.5" id="printPropTaxInfo"></p>
+          </div>
+
+          <div class="text-right">
+            <div class="inline-block bg-slate-50 border border-slate-300 rounded-xl p-3 text-center">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">TEKLİF NO</span>
+              <span class="font-mono font-black text-slate-900 text-base sm:text-lg" id="printPropNo">TKF-2026-001</span>
+            </div>
+            <div class="text-xs text-slate-600 mt-2 font-semibold">Tarih: <span id="printPropDate">-</span></div>
+            <div class="text-xs text-amber-700 font-semibold mt-0.5">Geçerlilik: <span id="printPropValid">-</span></div>
+          </div>
+        </div>
+
+        <!-- Müşteri ve Konu Bilgileri -->
+        <div class="grid grid-cols-2 gap-6 my-6 text-xs">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1.5">SAYIN / MÜŞTERİ BİLGİLERİ</h4>
+            <div class="font-extrabold text-slate-900 text-sm" id="printPropCustName">-</div>
+            <div class="text-slate-700 font-semibold mt-1" id="printPropCustPhone">-</div>
+            <div class="text-slate-600 mt-1" id="printPropCustAddress">-</div>
+          </div>
+
+          <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200/80 flex flex-col justify-center">
+            <h4 class="font-bold text-emerald-900 uppercase tracking-wider text-[10px] mb-1">TEKLİF KONUSU & ÇALIŞMA</h4>
+            <div class="font-black text-slate-900 text-sm leading-snug" id="printPropTitle">-</div>
+          </div>
+        </div>
+
+        <!-- Tablo -->
+        <div class="my-6">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="border-b-2 border-slate-900 font-bold text-slate-800 bg-slate-50">
+                <th class="py-2.5 px-3 text-center w-12">S.No</th>
+                <th class="py-2.5 px-3 text-left">Açıklama (Ürün / Hizmet / Malzeme)</th>
+                <th class="py-2.5 px-3 text-center w-24">Miktar</th>
+                <th class="py-2.5 px-3 text-right w-28">Birim Fiyat</th>
+                <th class="py-2.5 px-3 text-right w-32">Tutar</th>
+              </tr>
+            </thead>
+            <tbody id="printPropItemsBody" class="divide-y divide-slate-200 text-slate-800">
+              <!-- JS Populates -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Toplam Özeti -->
+        <div class="flex justify-end my-4 text-xs">
+          <div class="w-72 space-y-1.5 border-t-2 border-slate-900 pt-3">
+            <div class="flex justify-between text-slate-600">
+              <span>Ara Toplam:</span>
+              <span id="printPropSubtotal" class="font-bold text-slate-800">0 ₺</span>
+            </div>
+            <div class="flex justify-between text-slate-600" id="printPropDiscountRow">
+              <span>İskonto / İndirim:</span>
+              <span id="printPropDiscount" class="font-bold text-rose-600">0 ₺</span>
+            </div>
+            <div class="flex justify-between text-slate-600" id="printPropVatRow">
+              <span>KDV:</span>
+              <span id="printPropVat" class="font-semibold text-slate-700">Dahil</span>
+            </div>
+            <div class="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-300">
+              <span>GENEL TOPLAM:</span>
+              <span id="printPropGrandTotal" class="text-emerald-700 text-lg">0 ₺</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Teklif Şartları -->
+        <div class="mt-6 pt-4 border-t border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+          <p class="font-bold text-slate-800 mb-1">TEKLİF VE GARANTİ KOŞULLARI:</p>
+          <div id="printPropTerms" class="whitespace-pre-line bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            -
+          </div>
+        </div>
+
+        <!-- İmzalar -->
+        <div class="grid grid-cols-2 gap-12 mt-10 pt-6 text-xs text-center">
+          <div>
+            <div class="h-16 border-b border-dashed border-slate-400 mb-2"></div>
+            <div class="font-bold text-slate-800">Teklifi Hazırlayan / Kaşe & İmza</div>
+            <div class="text-[10px] text-slate-400">ustatamirci Teknik Servis</div>
+          </div>
+
+          <div>
+            <div class="h-16 border-b border-dashed border-slate-400 mb-2"></div>
+            <div class="font-bold text-slate-800">Müşteri Onay / Kaşe & İmza</div>
+            <div class="text-[10px] text-slate-400">Teklif şartlarını okudum, onaylıyorum.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 4: RESMİ SERVİS FİŞİ & MAKBUZ                          -->
+  <!-- ============================================================= -->
+  <div id="printSlipModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden my-6 print-area">
+      <div class="p-4 px-6 bg-slate-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+          <div class="flex items-center gap-2">
+            <i data-lucide="printer" class="w-5 h-5 text-sky-400"></i>
+            <span class="font-bold text-sm">Resmi Servis Formu & Makbuz �nizleme</span>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="sendWhatsAppService(state.printingServiceId)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+              <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp
+            </button>
+            <button onclick="window.print()" class="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+              <i data-lucide="printer" class="w-4 h-4"></i> Yazd�r
+            </button>
+            <button onclick="closeModal('printSlipModal')" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
+              <i data-lucide="x" class="w-4 h-4"></i> Kapat
+            </button>
+          </div>
+        </div>
+
+        <div class="p-8 sm:p-12 text-slate-800 bg-white" id="printableInvoice">
+        <div class="flex items-start justify-between border-b-2 border-slate-900 pb-6">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl font-black text-slate-900 tracking-tight" id="slipBusinessName">ustatamirci</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-600 border border-sky-300 px-1.5 py-0.5 rounded">TEKNİK SERVİS</span>
+            </div>
+            <p class="text-xs text-slate-600 font-medium mt-1" id="slipBusinessContact">Tel: 0532 000 00 00 • Kadıköy / İstanbul</p>
+            <p class="text-[11px] text-slate-500 mt-0.5" id="slipTaxInfo"></p>
+          </div>
+          <div class="text-right">
+            <div class="inline-block bg-slate-100 border border-slate-300 rounded-xl p-3 text-center">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">SERVİS FİŞ NO</span>
+              <span class="font-mono font-black text-slate-900 text-base sm:text-lg" id="slipNoDisplay">SRV-2026-001</span>
+            </div>
+            <div class="text-xs text-slate-600 mt-2 font-semibold">Tarih: <span id="slipDateDisplay">15.09.2026</span></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 my-6 text-xs">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-2">MÜŞTERİ BİLGİLERİ</h4>
+            <div class="font-extrabold text-slate-900 text-sm" id="slipCustName">-</div>
+            <div class="text-slate-700 font-semibold mt-1" id="slipCustPhone">-</div>
+            <div class="text-slate-600 mt-1" id="slipCustAddress">-</div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-2">CİHAZ BİLGİLERİ</h4>
+            <div class="font-extrabold text-slate-900 text-sm" id="slipDevBrand">-</div>
+            <div class="text-slate-700 font-semibold mt-1">Cihaz Türü: <span id="slipDevType" class="font-normal">KOMBİ</span></div>
+          </div>
+        </div>
+
+        <div class="space-y-4 my-6 text-xs">
+          <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/80">
+            <span class="font-bold text-amber-900 block mb-0.5">Arıza / Müşteri Şikayeti:</span>
+            <span class="text-slate-800" id="slipFault">-</span>
+          </div>
+
+          <div class="p-3.5 bg-sky-50/60 rounded-xl border border-sky-200/80">
+            <span class="font-bold text-sky-900 block mb-0.5">Yapılan Teknik Müdahale & Onarım:</span>
+            <span class="text-slate-800" id="slipAction">-</span>
+          </div>
+        </div>
+
+        <div class="my-6">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="border-b-2 border-slate-800 font-bold text-slate-700">
+                <th class="py-2 text-left">Açıklama / Değişen Parça</th>
+                <th class="py-2 text-center w-20">Miktar</th>
+                <th class="py-2 text-right w-24">Birim Fiyat</th>
+                <th class="py-2 text-right w-28">Toplam</th>
+              </tr>
+            </thead>
+            <tbody id="slipPartsBody" class="text-slate-700"></tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-end my-4 text-xs">
+          <div class="w-64 space-y-1.5 border-t-2 border-slate-900 pt-3">
+            <div class="flex justify-between text-slate-600">
+              <span>Yedek Parça Toplamı:</span>
+              <span id="slipPartsTotal" class="font-semibold">0 ₺</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>İşçilik & Servis:</span>
+              <span id="slipLaborTotal" class="font-semibold">0 ₺</span>
+            </div>
+            <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-300">
+              <span>GENEL TOPLAM:</span>
+              <span id="slipGrandTotal" class="text-base">0 ₺</span>
+            </div>
+            
+          </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-200 text-[11px] text-slate-500 leading-relaxed">
+          <p class="font-bold text-slate-700 mb-0.5">GARANTİ VE SERVİS KOŞULLARI:</p>
+          <p id="slipTerms">Değiştirilen orijinal yedek parçalar 1 (bir) yıl ustatamirci garantisi altındadır.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-12 mt-12 pt-6 text-xs text-center">
+          <div>
+            <div class="h-16 border-b border-dashed border-slate-400 mb-2"></div>
+            <div class="font-bold text-slate-800">Müşteri Adı / İmza</div>
+            <div class="text-[10px] text-slate-400">Cihazı sağlam ve çalışır vaziyette teslim aldım.</div>
+          </div>
+
+          <div>
+            <div class="h-16 border-b border-dashed border-slate-400 mb-2"></div>
+            <div class="font-bold text-slate-800">ustatamirci / Kaşe & İmza</div>
+            <div class="text-[10px] text-slate-400">Teknik servis kontrolü yapılmıştır.</div>
+          </div>
+      </div>
+      <div class="p-4 px-6 bg-slate-100 flex items-center justify-center border-t border-slate-200 no-print">
+        <button onclick="closeModal('printSlipModal')" class="px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition flex items-center gap-2">
+          KAPAT
+        </button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 5: MÜŞTERİ PROFİLİ & SERVİS GEÇMİŞİ EKRANI              -->
+  <!-- ============================================================= -->
+  <div id="historyModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 max-h-[92vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="p-4 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-600/30 border border-sky-400/40 text-sky-400 flex items-center justify-center">
+            <i data-lucide="user-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="histCustName" class="font-extrabold text-base text-white">-</h3>
+              <span id="histCustDistrictBadge" class="text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-400/30 px-2 py-0.5 rounded-full">İstanbul</span>
+            </div>
+            <p class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+              <span>Tel: <strong id="histCustPhone" class="text-slate-200 font-semibold">-</strong></span>
+              <span>•</span>
+              <span id="histCustAddressBrief" class="truncate max-w-xs text-slate-400">-</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="startNewServiceForCustomer(state.viewingCustomerId)" class="px-3.5 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition shadow-sm active:scale-95">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Bu Müşteriye Yeni Servis Aç</span>
+          </button>
+          <button onclick="closeModal('historyModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Content (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-5 text-xs flex-1 bg-slate-50/50">
+
+        <!-- Müşteri İletişim, Adres ve Hızlı İşlemler Kartı -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Açık Adres & Konum</span>
+              <div id="histCustAddress" class="font-semibold text-slate-800 text-xs">-</div>
+              <div id="histCustNotesContainer" class="mt-1.5 text-[11px] text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60 inline-flex items-center gap-1 hidden">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-amber-600"></i>
+                <span id="histCustNotesText">-</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 flex-wrap">
+              <a id="histPhoneCallBtn" href="tel:" class="px-3 py-1.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 rounded-xl font-bold flex items-center gap-1.5 transition">
+                <i data-lucide="phone" class="w-3.5 h-3.5 text-sky-600"></i> Ara
+              </a>
+              <a id="histWhatsAppBtn" href="https://wa.me/" target="_blank" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl font-bold flex items-center gap-1.5 transition border border-emerald-200">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
+              </a>
+              <a id="histMapsBtn" href="https://maps.google.com" target="_blank" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold flex items-center gap-1.5 transition border border-blue-200">
+                <i data-lucide="map" class="w-3.5 h-3.5"></i> Harita
+              </a>
+              <button onclick="editCustomer(state.viewingCustomerId)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center gap-1.5 transition">
+                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Bilgileri Düzenle
+              </button>
+            </div>
+          </div>
+
+          <!-- Kayıtlı Cihazlar -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <i data-lucide="cpu" class="w-3.5 h-3.5 text-sky-600"></i> Kayıtlı Cihazlar
+              </span>
+              <button onclick="openAddDeviceModal(state.viewingCustomerId)" class="text-sky-600 hover:text-sky-800 font-bold text-[11px] flex items-center gap-1">
+                <i data-lucide="plus" class="w-3 h-3"></i> Yeni Cihaz Ekle
+              </button>
+            </div>
+            <div id="histDevicesContainer" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Müşteri İstatistik Özeti -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Toplam Servis</span>
+            <span id="histStatCount" class="text-lg font-black text-slate-900 mt-0.5 block">0</span>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Toplam Tutar</span>
+            <span id="histStatTotal" class="text-lg font-black text-slate-900 mt-0.5 block">0 ₺</span>
+          </div>
+          
+        </div>
+
+        <!-- Servis Geçmişi Başlığı ve Listesi -->
+        <div>
+          <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-200">
+            <h4 class="font-black text-slate-900 text-sm flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-sky-600"></i>
+              Servis & Yapılan İşlem Geçmişi (Tarih Sıralı)
+            </h4>
+            <span class="text-[11px] text-slate-500">Önceki servis kayıtlarını inceleyin veya düzenleyin</span>
+          </div>
+
+          <div id="histServicesContainer" class="space-y-3">
+            <!-- Dynamic past service cards -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 px-6 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+        <button type="button" onclick="closeModal('historyModal')" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+          Kapat
+        </button>
+
+        <button type="button" onclick="startNewServiceForCustomer(state.viewingCustomerId)" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-extrabold flex items-center gap-2 shadow-md shadow-sky-600/20 transition active:scale-95">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Bu Müşteriye Yeni Servis Kaydı Aç</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 6: MÜŞTERİ BİLGİLERİNİ DÜZENLE                          -->
+  <!-- ============================================================= -->
+  <div id="customerModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6">
+      <div class="p-4 px-6 bg-slate-900 text-white flex items-center justify-between">
+        <h3 class="font-extrabold text-sm flex items-center gap-2">
+          <i data-lucide="user-cog" class="w-4 h-4 text-sky-400"></i> Müşteri Bilgilerini Güncelle
+        </h3>
+        <button onclick="closeModal('customerModal')" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="customerEditForm" onsubmit="saveCustomerForm(event)" class="p-6 space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Müşteri Adı Soyadı:</label>
+          <input type="text" id="custName" class="w-full border border-slate-300 rounded-xl p-2.5 font-bold text-slate-800 bg-white" required>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Telefon Numarası:</label>
+          <input type="tel" id="custPhone" class="w-full border border-slate-300 rounded-xl p-2.5 font-semibold text-slate-800 bg-white" required>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">İlçe:</label>
+            <select id="custDistrict" onchange="onCustomerModalDistrictChange(this.value)" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-medium" required>
+              <option value="">-- İlçe Seçin --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Mahalle:</label>
+            <select id="custNeighborhood" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-medium">
+              <option value="">-- Önce İlçe Seçin --</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Açık Adres / Bina No / Daire:</label>
+          <textarea id="custAddress" rows="2" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-normal"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Müşteri Özel Notu:</label>
+          <input type="text" id="custNotes" placeholder="Örn: Kapı zili bozuk, gelmeden ara..." class="w-full border border-slate-300 rounded-xl p-2 bg-white">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+          <button type="button" onclick="closeModal('customerModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+            İptal
+          </button>
+          <button type="submit" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-extrabold transition">
+            Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 7: MÜŞTERİYE YENİ CİHAZ EKLE                            -->
+  <!-- ============================================================= -->
+  <div id="addDeviceModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6">
+      <div class="p-4 px-6 bg-slate-900 text-white flex items-center justify-between">
+        <h3 class="font-extrabold text-sm flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400"></i> Yeni Cihaz Kaydı Ekle
+        </h3>
+        <button onclick="closeModal('addDeviceModal')" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="addDeviceForm" onsubmit="saveAddDeviceForm(event)" class="p-6 space-y-3.5 text-xs">
+        <input type="hidden" id="addDevCustomerId">
+
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold">
+          Müşteri: <span id="addDevCustomerName" class="font-bold text-slate-900">-</span>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Cihaz Türü:</label>
+          <select id="modalNewDevType" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-bold text-slate-800">
+            <option value="kombi">Kombi</option>
+            <option value="klima">Klima</option>
+            <option value="termosifon">Termosifon</option>
+            <option value="sofben">Şofben</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Marka:</label>
+          <input type="text" id="modalNewDevBrand" list="popularBrandsList" placeholder="Örn: DemirDöküm, Daikin, Bosch..." class="w-full border border-slate-300 rounded-xl p-2.5 font-bold text-slate-800 bg-white" required>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Model / Kapasite:</label>
+          <input type="text" id="modalNewDevModel" placeholder="Örn: Nitromix P 24 / 12.000 BTU" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+          <button type="button" onclick="closeModal('addDeviceModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+            İptal
+          </button>
+          <button type="submit" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-extrabold transition">
+            Cihazı Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase JS SDK (Compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="districts-data.js?v=6"></script>
+  <script src="mock-data.js?v=6"></script>
+  <script src="app.js?v=6"></script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        // Once eski tum SW'leri sil, sonra yenisini kaydet
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          var unregs = registrations.map(function(r) { return r.unregister(); });
+          return Promise.all(unregs);
+        }).then(function() {
+          return navigator.serviceWorker.register('./sw.js?v=13');
+        }).then(function(reg) {
+          console.log('SW kayitli:', reg.scope);
+        }).catch(function(err) {
+          console.log('SW hatasi:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
